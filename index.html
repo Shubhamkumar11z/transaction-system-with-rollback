@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Transaction System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>💳 Transaction System (Rollback Demo)</h1>
+
+    <!-- ACCOUNT BALANCE -->
+    <div class="card">
+        <h2>Your Account</h2>
+        <p id="balance">Balance: ₹0</p>
+        <button onclick="getBalance()">Refresh Balance</button>
+    </div>
+
+    <!-- TRANSFER MONEY -->
+    <div class="card">
+        <h2>Transfer Money</h2>
+        <input type="text" id="toAccount" placeholder="Recipient Account ID">
+        <input type="number" id="amount" placeholder="Amount">
+        <button onclick="transfer()">Send Money</button>
+        <p id="status"></p>
+    </div>
+
+    <!-- TRANSACTION LOG -->
+    <div class="card">
+        <h2>Transaction Logs</h2>
+        <div id="logs"></div>
+    </div>
+</div>
+
+<script>
+// FETCH BALANCE
+async function getBalance(){
+    const res = await fetch("http://localhost:3000/balance");
+    const data = await res.json();
+    document.getElementById("balance").innerText =
+        "Balance: ₹" + data.balance;
+}
+
+// TRANSFER FUNCTION
+async function transfer(){
+    const to = document.getElementById("toAccount").value;
+    const amount = document.getElementById("amount").value;
+
+    try {
+        const res = await fetch("http://localhost:3000/transfer", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({to, amount})
+        });
+
+        const data = await res.json();
+
+        if(res.status === 200){
+            document.getElementById("status").innerText =
+                "✅ Transaction Successful";
+            addLog("SUCCESS: ₹" + amount + " sent to " + to);
+        } else {
+            document.getElementById("status").innerText =
+                "❌ Transaction Failed (Rollback Applied)";
+            addLog("FAILED: ₹" + amount + " rollback triggered");
+        }
+
+        getBalance();
+    } catch(err){
+        document.getElementById("status").innerText =
+            "⚠️ Server Error";
+        addLog("ERROR: Server issue");
+    }
+}
+
+// LOG FUNCTION
+function addLog(message){
+    const logBox = document.getElementById("logs");
+    const log = document.createElement("p");
+    log.innerText = new Date().toLocaleTimeString() + " - " + message;
+    logBox.appendChild(log);
+}
+</script>
+
+</body>
+</html>
